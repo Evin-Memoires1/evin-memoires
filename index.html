@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Evin Memoires</title>
+    <!-- Firebase SDK v8 -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background: #f5f5f5;
+            min-height: 100vh;
+            padding: 15px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            font-weight: 600;
+            color: #1e1e1e;
+        }
+
+        .header h1 span {
+            color: #888;
+            font-weight: 400;
+        }
+
+        .message {
+            background: #1e1e1e;
+            color: white;
+            padding: 15px;
+            border-radius: 30px;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .password-section {
+            background: white;
+            border-radius: 25px;
+            padding: 30px 20px;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .password-title {
+            font-size: 18px;
+            color: #1e1e1e;
+            margin-bottom: 20px;
+        }
+
+        .password-input {
+            width: 180px;
+            padding: 15px;
+            border: 2px solid #eee;
+            border-radius: 30px;
+            font-size: 22px;
+            text-align: center;
+            letter-spacing: 5px;
+            margin: 0 auto 20px;
+            display: block;
+        }
+
+        .password-btn {
+            background: #1e1e1e;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            width: 100%;
+            max-width: 280px;
+        }
+
+        .memories-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin: 20px 0 90px;
+        }
+
+        .memory-card {
+            background: white;
+            border-radius: 25px;
+            padding: 20px;
+            border: 1px solid #eee;
+            position: relative;
+        }
+
+        .memory-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .memory-date {
+            color: #999;
+            font-size: 12px;
+        }
+
+        .delete-btn {
+            background: #ffebee;
+            border: none;
+            color: #f44336;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .memory-text {
+            color: #1e1e1e;
+            font-size: 16px;
+            line-height: 1.8;
+            white-space: pre-wrap;
+            padding: 5px 0;
+        }
+
+        .memory-image {
+            width: 100%;
+            border-radius: 20px;
+            margin: 10px 0;
+        }
+
+        .memory-video {
+            width: 100%;
+            border-radius: 20px;
+            margin: 10px 0;
+        }
+
+        .memory-audio {
+            width: 100%;
+            margin: 10px 0;
+        }
+
+        .memory-audio audio {
+            width: 100%;
+            height: 50px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 50px 20px;
+            color: #999;
+        }
+
+        .empty-state span {
+            font-size: 50px;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .fab {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 65px;
+            height: 65px;
+            border-radius: 50%;
+            background: #1e1e1e;
+            color: white;
+            border: none;
+            font-size: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+
+        .fab.active {
+            background: #f44336;
+            transform: translateX(-50%) rotate(45deg);
+        }
+
+        .add-modal {
+            position: fixed;
+            bottom: -100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border-radius: 30px 30px 0 0;
+            padding: 25px;
+            box-shadow: 0 -5px 25px rgba(0,0,0,0.1);
+            transition: bottom 0.3s ease;
+            z-index: 999;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .add-modal.show {
+            bottom: 0;
+        }
+
+        .modal-header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .modal-header h3 {
+            font-size: 22px;
+            color: #1e1e1e;
+        }
+
+        .add-options {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .option-btn {
+            flex: 1;
+            background: #f5f5f5;
+            border: none;
+            padding: 12px 5px;
+            border-radius: 50px;
+            font-size: 15px;
+            color: #1e1e1e;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .option-btn.active {
+            background: #1e1e1e;
+            color: white;
+        }
+
+        .option-btn span {
+            font-size: 24px;
+        }
+
+        .add-section {
+            margin-top: 20px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .upload-box {
+            background: #f9f9f9;
+            border: 2px dashed #ddd;
+            border-radius: 20px;
+            padding: 35px 20px;
+            text-align: center;
+            margin: 15px 0;
+            cursor: pointer;
+        }
+
+        .upload-box input {
+            display: none;
+        }
+
+        .upload-box span {
+            font-size: 45px;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .upload-box p {
+            color: #666;
+        }
+
+        .text-box {
+            width: 100%;
+            padding: 18px;
+            border: 2px solid #eee;
+            border-radius: 20px;
+            font-size: 16px;
+            margin: 15px 0;
+            background: #f9f9f9;
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        .preview-box {
+            width: 100%;
+            margin: 15px 0;
+        }
+
+        .preview-box img,
+        .preview-box video {
+            width: 100%;
+            border-radius: 15px;
+        }
+
+        .preview-box audio {
+            width: 100%;
+        }
+
+        .add-submit {
+            width: 100%;
+            padding: 18px;
+            background: #1e1e1e;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="content">
+        <div class="header">
+            <h1>Evin <span>Memoires</span></h1>
+        </div>
+
+        <div id="message" class="message"></div>
+
+        <div id="passwordSection" class="password-section">
+            <div class="password-title" id="passwordTitle">أنشئ كلمة المرور</div>
+            <input type="password" class="password-input" id="passwordInput" maxlength="6" inputmode="numeric" placeholder="******">
+            <button class="password-btn" id="passwordAction" onclick="handlePassword()">تأكيد</button>
+        </div>
+
+        <div id="memoriesContainer"></div>
+    </div>
+
+    <button class="fab hidden" id="fabBtn" onclick="toggleAddModal()">+</button>
+
+    <div class="add-modal" id="addModal">
+        <div class="modal-header">
+            <h3>إضافة ذكرى</h3>
+	<button class="close-btn" onclick="toggleAddModal()">✕</button>
+        </div>
+
+        <div class="add-options">
+            <button class="option-btn active" onclick="showAddOption('text')">
+                <span>📝</span>
+                نص / رابط
+            </button>
+            <button class="option-btn" onclick="showAddOption('media')">
+                <span>🖼️</span>
+                صورة/فيديو
+            </button>
+        </div>
+
+        <div id="add-text" class="add-section">
+            <textarea class="text-box" id="textInput" placeholder="اكتب ذكرى أو رابط أغنية..."></textarea>
+            <button class="add-submit" onclick="addTextOrLink()">إضافة</button>
+        </div>
+
+        <div id="add-media" class="add-section hidden">
+            <div class="upload-box" onclick="document.getElementById('mediaInput').click()">
+                <input type="file" id="mediaInput" accept="image/*,video/*" onchange="previewMedia()">
+                <span>📁</span>
+                <p>اختر صورة أو فيديو</p>
+            </div>
+            <div class="preview-box" id="mediaPreview"></div>
+            <button class="add-submit" onclick="addMedia()">إضافة</button>
+        </div>
+    </div>
+
+    <script>
+        // ✅ إعدادات Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyDVeDkYb5dQtHMzZgXkpnXg-XN33OUlb6E",
+            authDomain: "evin-memoires-8b4e9.firebaseapp.com",
+            databaseURL: "https://evin-memoires-8b4e9-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "evin-memoires-8b4e9",
+            storageBucket: "evin-memoires-8b4e9.firebasestorage.app",
+            messagingSenderId: "380157461513",
+            appId: "1:380157461513:web:3e7204e0ab10205c1124d8",
+            measurementId: "G-DLTNTW2XC6"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const storage = firebase.storage();
+
+        // ✅ تحويل كود العميل إلى حروف كبيرة
+        const urlParams = new URLSearchParams(window.location.search);
+        let customerCode = urlParams.get('code');
+        
+        if (!customerCode) {
+            customerCode = 'CUST' + Math.floor(Math.random() * 10000);
+        } else {
+            customerCode = customerCode.toUpperCase();
+        }
+
+        let hasPassword = false;
+        let currentPassword = '';
+        let currentFile = null;
+
+        async function loadMemories() {
+            try {
+                const snapshot = await database.ref(`users/${customerCode}/memories`).once('value');
+                const memories = snapshot.val() || [];
+                displayMemories(memories);
+            } catch (error) {
+                displayMemories([]);
+            }
+        }
+
+        async function saveMemories(memories) {
+            try {
+                await database.ref(`users/${customerCode}`).update({
+                    password: currentPassword,
+                    memories: memories
+                });
+                await loadMemories();
+                return true;
+            } catch (error) {
+                return false;
+            }
+        }
+
+        async function checkPasswordExists() {
+            try {
+                const snapshot = await database.ref(`users/${customerCode}/password`).once('value');
+                const password = snapshot.val();
+                
+                if (password) {
+                    hasPassword = true;
+                    document.getElementById('passwordTitle').textContent = 'أدخل كلمة المرور';
+                    document.getElementById('passwordAction').textContent = 'دخول';
+                } else {
+                    hasPassword = false;
+                    document.getElementById('passwordTitle').textContent = 'أنشئ كلمة المرور';
+                    document.getElementById('passwordAction').textContent = 'إنشاء';
+                }
+            } catch (error) {}
+        }
+
+        async function handlePassword() {
+            const password = document.getElementById('passwordInput').value;
+            
+            if (password.length < 4 || password.length > 6) {
+                showMessage('❌ كلمة المرور 4-6 أرقام', 'error');
+                return;
+            }
+
+            if (!hasPassword) {
+                try {
+                    await database.ref(`users/${customerCode}`).set({
+                        password: password,
+                        memories: []
+                    });
+                    
+                    currentPassword = password;
+                    document.getElementById('passwordSection').classList.add('hidden');
+                    document.getElementById('fabBtn').classList.remove('hidden');
+                    showMessage('✅ تم إنشاء الحساب', 'success');
+                    await loadMemories();
+                } catch (error) {
+                    showMessage('❌ فشل إنشاء الحساب', 'error');
+                }
+            } else {
+                try {
+                    const snapshot = await database.ref(`users/${customerCode}/password`).once('value');
+                    const storedPassword = snapshot.val();
+                    
+                    if (storedPassword === password) {
+                        currentPassword = password;
+                        document.getElementById('passwordSection').classList.add('hidden');
+                        document.getElementById('fabBtn').classList.remove('hidden');
+                        showMessage('✅ أهلاً بك', 'success');
+                        await loadMemories();
+                    } else {
+                        showMessage('❌ كلمة مرور خاطئة', 'error');
+                    }
+                } catch (error) {
+                    showMessage('❌ فشل التحقق', 'error');
+                }
+            }
+        }
+
+        function displayMemories(memories) {
+            const container = document.getElementById('memoriesContainer');
+            
+            if (!memories || memories.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <span>✨</span>
+                        <p>لا توجد ذكريات بعد</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '<div class="memories-grid">';
+            
+            [...memories].reverse().forEach(m => {
+                const date = new Date(m.date).toLocaleDateString('ar-SA', {
+                    year: 'numeric', month: 'short', day: 'numeric',
+                    hour: '2-digit', minute: '2-digit'
+                });
+
+                let content = '';
+                if (m.type === 'text') content = `<div class="memory-text">${m.content}</div>`;
+                else if (m.type === 'image') content = `<img src="${m.content}" class="memory-image" onclick="window.open(this.src)">`;
+                else if (m.type === 'video') content = `<video class="memory-video" controls><source src="${m.content}"></video>`;
+                else if (m.type === 'link') content = `<div class="memory-audio"><audio controls><source src="${m.content}"></audio></div>`;
+
+                html += `
+                    <div class="memory-card">
+                        <div class="memory-header">
+                            <span class="memory-date">${date}</span>
+                            <button class="delete-btn" onclick="deleteMemory('${m.id}')">🗑️</button>
+                        </div>
+                        ${content}
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function showAddOption(option) {
+            document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.add-section').forEach(s => s.classList.add('hidden'));
+            
+            document.getElementById(`add-${option}`).classList.remove('hidden');
+            event.target.classList.add('active');
+            
+            currentFile = null;
+            document.getElementById('mediaPreview').innerHTML = '';
+            document.getElementById('textInput').value = '';
+        }
+
+        function previewMedia() {
+            const file = document.getElementById('mediaInput').files[0];
+            if (!file) return;
+            currentFile = file;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.getElementById('mediaPreview');
+                if (file.type.startsWith('image/')) {
+                    preview.innerHTML = `<img src="${e.target.result}" style="width:100%; border-radius:15px;">`;
+                } else {
+                    preview.innerHTML = `<video controls style="width:100%; border-radius:15px;"><source src="${e.target.result}"></video>`;
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function addTextOrLink() {
+            const text = document.getElementById('textInput').value.trim();
+            if (!text) {
+                showMessage('❌ اكتب شيء أولاً', 'error');
+                return;
+            }
+
+            const snapshot = await database.ref(`users/${customerCode}/memories`).once('value');
+            let memories = snapshot.val() || [];
+            
+            memories.push({
+                id: Date.now().toString(),
+                type: text.startsWith('http') ? 'link' : 'text',
+                content: text,
+                date: new Date().toISOString()
+            });
+
+            await database.ref(`users/${customerCode}/memories`).set(memories);
+            showMessage('✅ تمت الإضافة', 'success');
+            toggleAddModal();
+            document.getElementById('textInput').value = '';
+            await loadMemories();
+        }
+
+        async function addMedia() {
+            if (!currentFile) {
+                showMessage('❌ اختر ملف أولاً', 'error');
+                return;
+            }
+
+            showMessage('جاري الرفع...', 'success');
+
+            const fileRef = storage.ref(`users/${customerCode}/${Date.now()}_${currentFile.name}`);
+            
+            try {
+                await fileRef.put(currentFile);
+                const fileUrl = await fileRef.getDownloadURL();
+
+                const snapshot = await database.ref(`users/${customerCode}/memories`).once('value');
+                let memories = snapshot.val() || [];
+                
+                memories.push({
+                    id: Date.now().toString(),
+                    type: currentFile.type.startsWith('image/') ? 'image' : 'video',
+                    content: fileUrl,
+                    date: new Date().toISOString()
+                });
+
+                await database.ref(`users/${customerCode}/memories`).set(memories);
+                
+                showMessage('✅ تمت الإضافة', 'success');
+                toggleAddModal();
+                await loadMemories();
+            } catch (error) {
+                showMessage('❌ فشل الرفع', 'error');
+            }
+        }
+
+        async function deleteMemory(id) {
+            if (!confirm('متأكد من الحذف؟')) return;
+
+            const snapshot = await database.ref(`users/${customerCode}/memories`).once('value');
+            let memories = snapshot.val() || [];
+            memories = memories.filter(m => m.id !== id);
+            
+            await database.ref(`users/${customerCode}/memories`).set(memories);
+            showMessage('✅ تم الحذف', 'success');
+            await loadMemories();
+        }
+
+        function toggleAddModal() {
+            const modal = document.getElementById('addModal');
+            const fab = document.getElementById('fabBtn');
+            
+            if (modal.classList.contains('show')) {
+                modal.classList.remove('show');
+                fab.classList.remove('active');
+            } else {
+                modal.classList.add('show');
+                fab.classList.add('active');
+            }
+        }
+
+        function showMessage(text, type) {
+            const msg = document.getElementById('message');
+            msg.textContent = text;
+            msg.style.display = 'block';
+            msg.style.background = type === 'error' ? '#f44336' : '#1e1e1e';
+            setTimeout(() => msg.style.display = 'none', 3000);
+        }
+
+        document.addEventListener('click', function(e) {
+            const modal = document.getElementById('addModal');
+            const fab = document.getElementById('fabBtn');
+            
+            if (modal.classList.contains('show') && 
+                !modal.contains(e.target) && 
+                !fab.contains(e.target)) {
+                toggleAddModal();
+            }
+        });
+
+        checkPasswordExists();
+    </script>
+</body>
+</html>
