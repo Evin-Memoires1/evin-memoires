@@ -328,6 +328,25 @@
             cursor: pointer;
             margin-top: 15px;
         }
+
+        button:has(> svg),
+button[class*="close"],
+button[class*="Close"],
+button[aria-label="Close"],
+button[title="Close"],
+button:has(✕) {
+    display: none !important;
+}
+
+/* إخفاء أي أيقونة X تجي من إضافات الترجمة أو Grammarly */
+grammarly-editor-plugin,
+[data-grammarly-part],
+[class*="grammarly"],
+[class*="Grammarly"],
+[class*="translate"],
+[class*="Translate"] {
+    display: none !important;
+}
     </style>
 </head>
 <body>
