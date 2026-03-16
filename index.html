@@ -79,6 +79,11 @@
             margin-bottom: 20px;
             text-align: center;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            display: block;
+        }
+
+        .password-section.hidden {
+            display: none;
         }
 
         .password-title {
@@ -247,7 +252,7 @@
             transform: translateX(-50%) rotate(45deg);
         }
 
-        /* نافذة الإضافة - التصميم الجديد */
+        /* نافذة الإضافة */
         .add-modal {
             position: fixed;
             bottom: -100%;
@@ -274,6 +279,7 @@
             align-items: center;
             justify-content: space-between;
             margin-bottom: 20px;
+            flex-direction: row-reverse; /* الـ X على اليسار */
         }
 
         .close-add-modal {
@@ -419,7 +425,7 @@
         }
 
         .hidden {
-            display: none;
+            display: none !important;
         }
 
         .preview-box {
@@ -463,9 +469,9 @@
         </div>
 
         <div id="passwordSection" class="password-section">
-            <div class="password-title" id="passwordTitle">أنشئ كلمة المرور</div>
+            <div class="password-title" id="passwordTitle">أدخل كلمة المرور</div>
             <input type="password" class="password-input" id="passwordInput" maxlength="6" inputmode="numeric" placeholder="******">
-            <button class="password-btn" id="passwordAction" onclick="handlePassword()">تأكيد</button>
+            <button class="password-btn" id="passwordAction" onclick="handlePassword()">دخول</button>
         </div>
 
         <div id="memoriesContainer"></div>
@@ -473,7 +479,7 @@
 
     <button class="fab hidden" id="fabBtn" onclick="toggleAddModal()">+</button>
 
-    <!-- نافذة الإضافة - التصميم الجديد -->
+    <!-- نافذة الإضافة -->
     <div class="add-modal" id="addModal">
         <div class="add-modal-header">
             <button class="close-add-modal" onclick="toggleAddModal()">✕</button>
@@ -524,7 +530,7 @@
         const database = firebase.database();
         const storage = firebase.storage();
 
-        // ✅ تحويل كود العميل إلى حروف كبيرة
+        // ✅ كود العميل
         const urlParams = new URLSearchParams(window.location.search);
         let customerCode = urlParams.get('code');
         
@@ -603,7 +609,6 @@
 
             if (!hasPassword) {
                 try {
-                    // التحقق إذا كان الحساب موجود مسبقاً
                     const existingData = await database.ref(`users/${customerCode}`).once('value');
                     if (existingData.exists()) {
                         showMessage('⚠️ هذا الحساب موجود مسبقاً، أدخل كلمة المرور', 'error');
@@ -616,6 +621,7 @@
                     });
                     
                     currentPassword = password;
+                    document.getElementById('passwordSection').style.display = 'none';
                     document.getElementById('passwordSection').classList.add('hidden');
                     document.getElementById('fabBtn').classList.remove('hidden');
                     showMessage('✅ تم إنشاء الحساب', 'success');
@@ -630,6 +636,7 @@
                     
                     if (storedPassword === password) {
                         currentPassword = password;
+                        document.getElementById('passwordSection').style.display = 'none';
                         document.getElementById('passwordSection').classList.add('hidden');
                         document.getElementById('fabBtn').classList.remove('hidden');
                         showMessage('✅ أهلاً بك', 'success');
@@ -643,12 +650,11 @@
             }
         }
 
-        // ✅ دالة عرض الأغاني مع دعم جميع المنصات
+        // ✅ دالة عرض الأغاني
         function getMusicEmbed(url) {
             let embedCode = '';
             let platform = 'unknown';
             
-            // YouTube
             if (url.includes('youtube.com/watch') || url.includes('youtu.be')) {
                 let videoId = '';
                 if (url.includes('youtu.be')) {
@@ -661,14 +667,11 @@
                     platform = 'youtube';
                 }
             }
-            // Spotify
             else if (url.includes('spotify.com')) {
-                // تحويل رابط Spotify إلى رابط embed
                 let embedUrl = url.replace('open.spotify.com', 'open.spotify.com/embed');
                 embedCode = `<iframe style="border-radius:12px" src="${embedUrl}" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`;
                 platform = 'spotify';
             }
-            // SoundCloud
             else if (url.includes('soundcloud.com')) {
                 embedCode = `<iframe width="100%" height="200" scrolling="no" frameborder="no" src="https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true"></iframe>`;
                 platform = 'soundcloud';
@@ -813,8 +816,11 @@
                 await database.ref(`users/${customerCode}/memories`).set(memories);
                 
                 showMessage('✅ تمت الإضافة', 'success');
-                toggleAddModal();
+                toggleAddModal(); // إغلاق النافذة بعد الرفع
                 await loadMemories();
+                currentFile = null;
+                document.getElementById('mediaPreview').innerHTML = '';
+                document.getElementById('mediaInput').value = '';
             } catch (error) {
                 showMessage('❌ فشل الرفع', 'error');
             }
