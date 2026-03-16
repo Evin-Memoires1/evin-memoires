@@ -328,25 +328,6 @@
             cursor: pointer;
             margin-top: 15px;
         }
-
-        button:has(> svg),
-button[class*="close"],
-button[class*="Close"],
-button[aria-label="Close"],
-button[title="Close"],
-button:has(✕) {
-    display: none !important;
-}
-
-/* إخفاء أي أيقونة X تجي من إضافات الترجمة أو Grammarly */
-grammarly-editor-plugin,
-[data-grammarly-part],
-[class*="grammarly"],
-[class*="Grammarly"],
-[class*="translate"],
-[class*="Translate"] {
-    display: none !important;
-}
     </style>
 </head>
 <body>
@@ -686,6 +667,24 @@ grammarly-editor-plugin,
                 toggleAddModal();
             }
         });
+
+        // ✅ إزالة أي عناصر غريبة قد تظهر (مثل X)
+        function removeFloatingX() {
+            // هذا الكود نظيف وآمن
+            const modal = document.getElementById('addModal');
+            if (!modal) return;
+            
+            // إزالة أي أزرار غير مرغوب فيها داخل النافذة
+            const unwantedButtons = modal.querySelectorAll('button:not(.option-btn):not(.add-submit):not(.upload-box *)');
+            unwantedButtons.forEach(btn => {
+                if (btn.innerHTML.includes('✕') || btn.innerHTML.includes('×')) {
+                    btn.remove();
+                }
+            });
+        }
+
+        // نشغل الدالة كل ثانية عشان نضمن النظافة
+        setInterval(removeFloatingX, 1000);
 
         checkPasswordExists();
     </script>
