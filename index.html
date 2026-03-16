@@ -49,6 +49,29 @@
             display: none;
         }
 
+        .loading-screen {
+            text-align: center;
+            padding: 40px;
+            background: white;
+            border-radius: 25px;
+            margin-bottom: 20px;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid #f0f0f0;
+            border-top: 3px solid #1e1e1e;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
         .password-section {
             background: white;
             border-radius: 25px;
@@ -160,6 +183,32 @@
             height: 50px;
         }
 
+        .music-embed {
+            width: 100%;
+            border-radius: 20px;
+            overflow: hidden;
+            margin: 10px 0;
+            background: #f0f0f0;
+        }
+
+        .music-embed iframe {
+            width: 100%;
+            height: 352px;
+            border: none;
+        }
+
+        .music-embed.spotify iframe {
+            height: 352px;
+        }
+
+        .music-embed.youtube iframe {
+            height: 200px;
+        }
+
+        .music-embed.soundcloud iframe {
+            height: 200px;
+        }
+
         .empty-state {
             text-align: center;
             padding: 50px 20px;
@@ -198,7 +247,7 @@
             transform: translateX(-50%) rotate(45deg);
         }
 
-        /* ========== التصميم الجديد والهادي لنافذة الإضافة ========== */
+        /* نافذة الإضافة - التصميم الجديد */
         .add-modal {
             position: fixed;
             bottom: -100%;
@@ -207,7 +256,7 @@
             background: rgba(255, 255, 255, 0.98);
             backdrop-filter: blur(10px);
             border-radius: 40px 40px 0 0;
-            padding: 30px 25px 35px;
+            padding: 25px 25px 35px;
             box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.08);
             transition: bottom 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             z-index: 1000;
@@ -221,22 +270,45 @@
         }
 
         .add-modal-header {
-            text-align: center;
-            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .close-add-modal {
+            background: #f0f0f0;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 20px;
+            color: #555;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+
+        .close-add-modal:hover {
+            background: #e0e0e0;
+            transform: scale(1.05);
         }
 
         .add-modal-title {
-            font-size: 24px;
+            font-size: 22px;
             font-weight: 500;
             color: #1e1e1e;
-            letter-spacing: -0.3px;
-            opacity: 0.9;
+            flex: 1;
+            text-align: center;
         }
 
         .add-type-selector {
             display: flex;
             gap: 15px;
-            margin-bottom: 35px;
+            margin-bottom: 30px;
             background: #f0f2f5;
             padding: 8px;
             border-radius: 60px;
@@ -361,6 +433,20 @@
             border-radius: 24px;
             box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
         }
+
+        .preview-box audio {
+            width: 100%;
+        }
+
+        .song-info {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
+            padding: 5px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -370,6 +456,11 @@
         </div>
 
         <div id="message" class="message"></div>
+
+        <div id="loadingScreen" class="loading-screen" style="display: none;">
+            <div class="loading-spinner"></div>
+            <div>جاري التحميل...</div>
+        </div>
 
         <div id="passwordSection" class="password-section">
             <div class="password-title" id="passwordTitle">أنشئ كلمة المرور</div>
@@ -382,9 +473,10 @@
 
     <button class="fab hidden" id="fabBtn" onclick="toggleAddModal()">+</button>
 
-    <!-- نافذة الإضافة - التصميم الجديد والهادي -->
+    <!-- نافذة الإضافة - التصميم الجديد -->
     <div class="add-modal" id="addModal">
         <div class="add-modal-header">
+            <button class="close-add-modal" onclick="toggleAddModal()">✕</button>
             <div class="add-modal-title">➕ إضافة ذكرى</div>
         </div>
 
@@ -400,7 +492,7 @@
         </div>
 
         <div id="add-text" class="add-input-section">
-            <textarea class="custom-textarea" id="textInput" rows="4" placeholder="اكتب ذكرى أو رابط أغنية..."></textarea>
+            <textarea class="custom-textarea" id="textInput" rows="4" placeholder="اكتب ذكرى أو رابط أغنية (YouTube, Spotify, SoundCloud...)"></textarea>
             <button class="custom-submit-btn" onclick="addTextOrLink()">💾 حفظ الذكرى</button>
         </div>
 
@@ -446,6 +538,19 @@
         let currentPassword = '';
         let currentFile = null;
 
+        // ✅ دوال التحميل
+        function showLoading(show) {
+            const loading = document.getElementById('loadingScreen');
+            const passwordSection = document.getElementById('passwordSection');
+            if (show) {
+                loading.style.display = 'block';
+                passwordSection.style.display = 'none';
+            } else {
+                loading.style.display = 'none';
+                passwordSection.style.display = 'block';
+            }
+        }
+
         async function loadMemories() {
             try {
                 const snapshot = await database.ref(`users/${customerCode}/memories`).once('value');
@@ -470,6 +575,7 @@
         }
 
         async function checkPasswordExists() {
+            showLoading(true);
             try {
                 const snapshot = await database.ref(`users/${customerCode}/password`).once('value');
                 const password = snapshot.val();
@@ -484,6 +590,7 @@
                     document.getElementById('passwordAction').textContent = 'إنشاء';
                 }
             } catch (error) {}
+            showLoading(false);
         }
 
         async function handlePassword() {
@@ -496,6 +603,13 @@
 
             if (!hasPassword) {
                 try {
+                    // التحقق إذا كان الحساب موجود مسبقاً
+                    const existingData = await database.ref(`users/${customerCode}`).once('value');
+                    if (existingData.exists()) {
+                        showMessage('⚠️ هذا الحساب موجود مسبقاً، أدخل كلمة المرور', 'error');
+                        return;
+                    }
+                    
                     await database.ref(`users/${customerCode}`).set({
                         password: password,
                         memories: []
@@ -529,6 +643,44 @@
             }
         }
 
+        // ✅ دالة عرض الأغاني مع دعم جميع المنصات
+        function getMusicEmbed(url) {
+            let embedCode = '';
+            let platform = 'unknown';
+            
+            // YouTube
+            if (url.includes('youtube.com/watch') || url.includes('youtu.be')) {
+                let videoId = '';
+                if (url.includes('youtu.be')) {
+                    videoId = url.split('youtu.be/')[1]?.split('?')[0];
+                } else if (url.includes('watch?v=')) {
+                    videoId = url.split('watch?v=')[1]?.split('&')[0];
+                }
+                if (videoId) {
+                    embedCode = `<iframe width="100%" height="200" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe>`;
+                    platform = 'youtube';
+                }
+            }
+            // Spotify
+            else if (url.includes('spotify.com')) {
+                // تحويل رابط Spotify إلى رابط embed
+                let embedUrl = url.replace('open.spotify.com', 'open.spotify.com/embed');
+                embedCode = `<iframe style="border-radius:12px" src="${embedUrl}" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`;
+                platform = 'spotify';
+            }
+            // SoundCloud
+            else if (url.includes('soundcloud.com')) {
+                embedCode = `<iframe width="100%" height="200" scrolling="no" frameborder="no" src="https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true"></iframe>`;
+                platform = 'soundcloud';
+            }
+            
+            if (embedCode) {
+                return `<div class="music-embed ${platform}">${embedCode}</div>`;
+            } else {
+                return `<div class="memory-audio"><audio controls><source src="${url}"></audio></div>`;
+            }
+        }
+
         function displayMemories(memories) {
             const container = document.getElementById('memoriesContainer');
             
@@ -551,10 +703,15 @@
                 });
 
                 let content = '';
-                if (m.type === 'text') content = `<div class="memory-text">${m.content}</div>`;
-                else if (m.type === 'image') content = `<img src="${m.content}" class="memory-image" onclick="window.open(this.src)">`;
-                else if (m.type === 'video') content = `<video class="memory-video" controls><source src="${m.content}"></video>`;
-                else if (m.type === 'link') content = `<div class="memory-audio"><audio controls><source src="${m.content}"></audio></div>`;
+                if (m.type === 'text') {
+                    content = `<div class="memory-text">${m.content}</div>`;
+                } else if (m.type === 'image') {
+                    content = `<img src="${m.content}" class="memory-image" onclick="window.open(this.src)">`;
+                } else if (m.type === 'video') {
+                    content = `<video class="memory-video" controls><source src="${m.content}"></video>`;
+                } else if (m.type === 'link') {
+                    content = getMusicEmbed(m.content);
+                }
 
                 html += `
                     <div class="memory-card">
@@ -610,9 +767,14 @@
             const snapshot = await database.ref(`users/${customerCode}/memories`).once('value');
             let memories = snapshot.val() || [];
             
+            let type = 'text';
+            if (text.startsWith('http')) {
+                type = 'link';
+            }
+
             memories.push({
                 id: Date.now().toString(),
-                type: text.startsWith('http') ? 'link' : 'text',
+                type: type,
                 content: text,
                 date: new Date().toISOString()
             });
@@ -701,21 +863,6 @@
                 toggleAddModal();
             }
         });
-
-        // ✅ إزالة أي عناصر غريبة قد تظهر (مثل X)
-        function removeFloatingX() {
-            const modal = document.getElementById('addModal');
-            if (!modal) return;
-            
-            const unwantedButtons = modal.querySelectorAll('button:not(.type-option):not(.custom-submit-btn):not(.upload-area *)');
-            unwantedButtons.forEach(btn => {
-                if (btn.innerHTML.includes('✕') || btn.innerHTML.includes('×')) {
-                    btn.remove();
-                }
-            });
-        }
-
-        setInterval(removeFloatingX, 1000);
 
         checkPasswordExists();
     </script>
